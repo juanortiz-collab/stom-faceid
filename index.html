@@ -1,120 +1,338 @@
 <!doctype html>
-<html>
+<html lang="es">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>STOM FaceID</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>STOM FaceID</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#0f1a2e; --text:#e9f1ff; --muted:#a7b6d6;
+      --brand:#18a0fb; --ok:#21c17a; --warn:#ffb020; --err:#ff4d5e;
+      --line:rgba(255,255,255,.10); --shadow:0 18px 45px rgba(0,0,0,.45); --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:radial-gradient(900px 500px at 50% -50%, rgba(24,160,251,.35), transparent 55%),
+                 linear-gradient(180deg, #070b14, var(--bg));
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      padding:18px 14px 24px;
+    }
+    .app{max-width:520px;margin:0 auto;}
+    .topbar{
+      display:flex;align-items:center;gap:12px;padding:14px 14px;
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .title{flex:1;line-height:1.1;}
+    .title h1{margin:0;font-size:16px;letter-spacing:.2px;}
+    .title .sub{margin-top:4px;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px;}
+    .clock{text-align:right;font-variant-numeric:tabular-nums;}
+    .clock .time{font-size:14px;font-weight:700}
+    .clock .date{font-size:11px;color:var(--muted)}
 
-<style>
-body{
-font-family:Arial;
-background:#0b1220;
-color:white;
-text-align:center;
-padding:20px;
-}
+    .card{
+      margin-top:12px;padding:14px;border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+    label{display:block;color:var(--muted);font-size:12px;margin-bottom:8px;}
+    select{
+      width:100%;padding:12px 12px;border-radius:14px;border:1px solid var(--line);
+      background:rgba(0,0,0,.25);color:var(--text);outline:none;font-size:14px;
+    }
 
-video{
-width:100%;
-max-width:500px;
-border-radius:10px;
-}
+    .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+    .badge{padding:8px 10px;border-radius:999px;font-size:12px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--muted);display:flex;align-items:center;gap:6px;}
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--warn)}
+    .dot.ok{background:var(--ok)}
+    .dot.err{background:var(--err)}
 
-button{
-padding:12px;
-margin-top:10px;
-width:100%;
-max-width:500px;
-background:#1f8efb;
-color:white;
-border:none;
-border-radius:10px;
-font-size:18px;
-}
+    .btnCam{
+      margin-left:auto;
+      padding:8px 10px;border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(24,160,251,.18);
+      color:var(--text);
+      font-size:12px;
+      cursor:pointer;
+      font-weight:800;
+    }
+    .camWrap{
+      margin-top:12px;border-radius:22px;overflow:hidden;border:1px solid var(--line);
+      background:#000;position:relative;aspect-ratio:3/4;
+      box-shadow:0 14px 30px rgba(0,0,0,.35);
+    }
+    video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);}
+    .camOverlay{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg, rgba(0,0,0,.20), rgba(0,0,0,0) 30%, rgba(0,0,0,.25));}
+    .hint{position:absolute;bottom:10px;left:10px;right:10px;font-size:12px;color:rgba(255,255,255,.88);text-shadow:0 2px 10px rgba(0,0,0,.6);display:flex;justify-content:space-between;gap:10px;z-index:5;}
+    .hint span{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);padding:7px 10px;border-radius:999px;backdrop-filter: blur(8px);font-variant-numeric: tabular-nums;}
 
-#status{
-margin-top:10px;
-font-size:14px;
-}
-</style>
+    .row{display:flex;gap:10px;margin-top:12px;}
+    button{
+      flex:1;padding:14px 12px;border-radius:16px;border:1px solid transparent;
+      font-size:15px;font-weight:900;cursor:pointer;color:#07101f;
+      background:linear-gradient(180deg, #3bd0ff, #18a0fb);
+      box-shadow:0 10px 25px rgba(24,160,251,.25);
+    }
+    button.secondary{background:linear-gradient(180deg, #b7c6ff, #7ea1ff);box-shadow:0 10px 25px rgba(126,161,255,.18);}
+    button:disabled{opacity:.45;cursor:not-allowed}
 
+    .out{margin-top:12px;padding:12px 12px;border-radius:16px;border:1px solid var(--line);background:rgba(0,0,0,.22);color:var(--text);font-size:13px;line-height:1.25;display:none;white-space:pre-wrap;}
+    .out.ok{border-color:rgba(33,193,122,.35); background:rgba(33,193,122,.10)}
+    .out.err{border-color:rgba(255,77,94,.35); background:rgba(255,77,94,.10)}
+    .foot{margin-top:10px;color:var(--muted);font-size:11px;display:flex;justify-content:space-between;gap:8px;opacity:.95;}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;}
+  </style>
 </head>
-
 <body>
+  <div class="app">
+    <div class="topbar">
+      <div class="title">
+        <h1>STOM Face ID</h1>
+        <div class="sub" id="instTxt">Cargando instalación…</div>
+      </div>
+      <div class="clock">
+        <div class="time" id="clockTime">--:--:--</div>
+        <div class="date" id="clockDate">--/--/----</div>
+      </div>
+    </div>
 
-<h2>STOM FaceID</h2>
+    <div class="card">
+      <label><b>Selecciona tu nombre</b></label>
+      <select id="selGuardia">
+        <option value="">Cargando…</option>
+      </select>
 
-<video id="video" autoplay playsinline></video>
+      <div class="badges">
+        <div class="badge"><span class="dot" id="dotCam"></span> Cámara</div>
+        <div class="badge"><span class="dot" id="dotGps"></span> GPS</div>
+        <div class="badge"><span class="dot" id="dotApi"></span> API</div>
 
-<button onclick="startCamera()">
-Activar Cámara
-</button>
+        <button class="btnCam" id="btnCam">Activar cámara</button>
+      </div>
 
-<button onclick="capture()">
-Capturar
-</button>
+      <div class="camWrap">
+        <video id="video" autoplay playsinline muted></video>
+        <div class="camOverlay"></div>
+        <div class="hint">
+          <span id="hint1">Selfie centrado</span>
+          <span id="hint2">Listo</span>
+        </div>
+      </div>
 
-<div id="status">
-Esperando...
-</div>
+      <div class="row">
+        <button id="btnEntrada">ENTRADA</button>
+        <button class="secondary" id="btnSalida">SALIDA</button>
+      </div>
 
+      <div id="out" class="out"></div>
+
+      <div class="foot">
+        <div class="mono" id="tokenTxt"></div>
+        <div>Requiere cámara + GPS. Solo dentro del radio.</div>
+      </div>
+    </div>
+  </div>
 
 <script>
+  // ✅ Pega aquí tu URL WebApp (la /exec)
+  const API_URL = "https://script.google.com/macros/s/AKfycbzD2oyawj3PBX_Uokzx2CZuYYWtPsvD9Tsj8GwQCdY5za-D0X3Pgi-K8md3aQy__Pu_/exec";
 
-const API =
-"https://script.google.com/macros/s/AKfycbxSetPE6rp4iQg6mTD-1siKDonRDz9rDewnvnTBRdkImP6zMWJtzaSMjLDQ5L9hORM0/exec";
+  const $ = (id)=>document.getElementById(id);
+  let stream = null;
+  let TOKEN = "";
 
-let stream;
+  function tickClock(){
+    const d=new Date();
+    const pad=n=>String(n).padStart(2,"0");
+    $("clockTime").textContent=`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    $("clockDate").textContent=`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+  }
+  setInterval(tickClock,1000); tickClock();
 
-async function startCamera(){
+  function setDot(id,state){
+    const el=$(id); if(!el) return;
+    el.className="dot"+(state==="ok"?" ok":state==="err"?" err":"");
+  }
+  function showMsg(text,kind=""){
+    const box=$("out");
+    box.style.display="block";
+    box.textContent=text;
+    box.className="out"+(kind?(" "+kind):"");
+  }
 
-document.getElementById("status").innerHTML="Activando cámara...";
+  function getTokenFromUrl(){
+    const u=new URL(location.href);
+    return String(u.searchParams.get("token")||"").trim();
+  }
 
-stream = await navigator.mediaDevices.getUserMedia({
-video:true
-});
+  async function apiPing(){
+    try{
+      const r=await fetch(`${API_URL}?action=ping`, { method:"GET" });
+      const j=await r.json();
+      setDot("dotApi", j.ok?"ok":"err");
+    }catch(e){
+      setDot("dotApi","err");
+    }
+  }
 
-video.srcObject=stream;
+  async function apiInit(){
+    const r=await fetch(`${API_URL}?action=init&token=${encodeURIComponent(TOKEN)}`, { method:"GET" });
+    const j=await r.json();
+    if(!j.ok) throw new Error(j.msg||"No se pudo iniciar");
+    return j;
+  }
 
-document.getElementById("status").innerHTML="Cámara OK";
+  async function apiSubmit(data){
+    const payload = { action:"submit", data };
+    const r=await fetch(API_URL, {
+      method:"POST",
+      headers:{ "Content-Type":"text/plain;charset=utf-8" }, // ✅ evita preflight CORS
+      body: JSON.stringify(payload)
+    });
+    return await r.json();
+  }
 
-}
+  async function startCamera(){
+    const v=$("video");
+    if(stream){ try{stream.getTracks().forEach(t=>t.stop())}catch(e){} stream=null; }
 
+    if(!navigator.mediaDevices?.getUserMedia){
+      setDot("dotCam","err");
+      showMsg("❌ Este navegador no soporta cámara. Usa Chrome actualizado.", "err");
+      return;
+    }
 
-async function capture(){
+    const constraintsList=[
+      { video:{ facingMode:{ ideal:"user" }, width:{ideal:640}, height:{ideal:480} }, audio:false },
+      { video:{ facingMode:"user" }, audio:false },
+      { video:true, audio:false }
+    ];
 
-document.getElementById("status").innerHTML="Capturando...";
+    let lastErr=null;
+    for(const c of constraintsList){
+      try{ stream=await navigator.mediaDevices.getUserMedia(c); break; }
+      catch(e){ lastErr=e; stream=null; }
+    }
+    if(!stream){
+      setDot("dotCam","err");
+      showMsg("❌ Cámara bloqueada.\nDetalle: "+(lastErr?.name||"Error")+" - "+(lastErr?.message||lastErr), "err");
+      return;
+    }
 
-let canvas=document.createElement("canvas");
+    v.srcObject=stream;
+    try{ await v.play().catch(()=>{}); }catch(e){}
+    setDot("dotCam","ok");
+    $("hint2").textContent="Cámara OK";
+    showMsg("✅ Cámara activa.", "ok");
+  }
 
-canvas.width=video.videoWidth;
-canvas.height=video.videoHeight;
+  function getGPS(){
+    return new Promise((resolve,reject)=>{
+      if(!navigator.geolocation) return reject(new Error("GPS no disponible"));
+      navigator.geolocation.getCurrentPosition(
+        pos=>resolve({lat:pos.coords.latitude, lon:pos.coords.longitude, acc:pos.coords.accuracy}),
+        err=>reject(err),
+        { enableHighAccuracy:true, timeout:15000, maximumAge:0 }
+      );
+    });
+  }
 
-canvas.getContext("2d")
-.drawImage(video,0,0);
+  function captureFromVideoB64(){
+    const v=$("video");
+    if(!v?.videoWidth || !v?.videoHeight) return "";
+    const c=document.createElement("canvas");
+    const w=v.videoWidth, h=v.videoHeight;
+    c.width=w; c.height=h;
+    const ctx=c.getContext("2d");
+    ctx.translate(w,0); ctx.scale(-1,1);
+    ctx.drawImage(v,0,0,w,h);
+    return c.toDataURL("image/jpeg",0.85);
+  }
 
-let img=canvas.toDataURL("image/jpeg");
+  function fillGuardias(list){
+    const sel=$("selGuardia");
+    sel.innerHTML='<option value="">-- Selecciona --</option>';
+    (list||[]).forEach(g=>{
+      const opt=document.createElement("option");
+      opt.value = g.rut + "|" + g.nombre;
+      opt.textContent = g.nombre;
+      sel.appendChild(opt);
+    });
+  }
 
-fetch(API,{
-method:"POST",
-body:JSON.stringify({
-action:"submit",
-data:{
-token:"test",
-imageDataUrl:img
-}
-})
-})
-.then(r=>r.json())
-.then(d=>{
+  async function send(tipo){
+    try{
+      const guardiaId=$("selGuardia").value;
+      if(!guardiaId) return showMsg("Selecciona tu nombre.", "err");
+      if(!stream) return showMsg("❌ Primero toca 'Activar cámara'.", "err");
 
-document.getElementById("status").innerHTML=
-JSON.stringify(d);
+      const selfieB64=captureFromVideoB64();
+      if(!selfieB64) return showMsg("❌ No se pudo capturar selfie. Espera 1 segundo y reintenta.", "err");
 
-});
+      showMsg("📡 Obteniendo GPS…");
+      setDot("dotGps","");
+      const gps=await getGPS();
+      setDot("dotGps","ok");
 
-}
+      showMsg("⏳ Registrando…");
+      $("hint2").textContent="Procesando…";
 
+      const res = await apiSubmit({
+        token: TOKEN,
+        tipo,
+        guardiaId,
+        lat: gps.lat,
+        lon: gps.lon,
+        selfieB64
+      });
+
+      $("hint2").textContent="Listo";
+
+      if(res.ok){
+        showMsg(`✅ ${res.msg}\nDistancia: ${res.dist_m} m`, "ok");
+      }else{
+        showMsg(`⚠️ ${res.msg}\nDistancia: ${res.dist_m ?? "-"} m\nSimilitud: ${res.similarity ?? "-"}%`, "err");
+      }
+
+    }catch(e){
+      setDot("dotGps","err");
+      showMsg("No se pudo registrar.\n" + (e?.message || e), "err");
+    }
+  }
+
+  async function boot(){
+    TOKEN = getTokenFromUrl();
+    $("tokenTxt").textContent = "Token: " + (TOKEN || "(sin token)");
+
+    await apiPing();
+
+    if(!TOKEN){
+      showMsg("Falta token en el link. Ej: ?token=RIO-NEGRO-2026-01", "err");
+      return;
+    }
+
+    try{
+      const init = await apiInit();
+      $("instTxt").textContent = `${init.inst.cliente} – ${init.inst.instalacion} (radio ${init.inst.radio_m} m)`;
+      fillGuardias(init.guardias||[]);
+      showMsg("✅ Listo. Activa cámara y registra ENTRADA/SALIDA.", "ok");
+    }catch(err){
+      showMsg("❌ " + (err?.message || err), "err");
+    }
+  }
+
+  $("btnCam").addEventListener("click", startCamera);
+  $("btnEntrada").addEventListener("click", ()=>send("ENTRADA"));
+  $("btnSalida").addEventListener("click", ()=>send("SALIDA"));
+
+  boot();
 </script>
-
 </body>
 </html>
