@@ -44,7 +44,7 @@
     label{display:block;color:var(--muted);font-size:12px;margin-bottom:8px;}
     select{
       width:100%;padding:12px 12px;border-radius:14px;border:1px solid var(--line);
-      background:rgba(0,0,0,.25);color:var(--text);outline:none;font-size:14px;
+      background:rgba(0,0,0,.25);color:var(--text);outline:none;font-size:16px;
     }
 
     .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
@@ -76,7 +76,7 @@
     .row{display:flex;gap:10px;margin-top:12px;}
     button{
       flex:1;padding:14px 12px;border-radius:16px;border:1px solid transparent;
-      font-size:15px;font-weight:900;cursor:pointer;color:#07101f;
+      font-size:16px;font-weight:900;cursor:pointer;color:#07101f;
       background:linear-gradient(180deg, #3bd0ff, #18a0fb);
       box-shadow:0 10px 25px rgba(24,160,251,.25);
     }
@@ -141,12 +141,13 @@
   </div>
 
 <script>
-  // ✅ Pega aquí tu URL WebApp (la /exec)
+  // ✅ URL WebApp /exec
   const API_URL = "https://script.google.com/macros/s/AKfycbzD2oyawj3PBX_Uokzx2CZuYYWtPsvD9Tsj8GwQCdY5za-D0X3Pgi-K8md3aQy__Pu_/exec";
 
   const $ = (id)=>document.getElementById(id);
   let stream = null;
   let TOKEN = "";
+  let SENDING = false;
 
   function tickClock(){
     const d=new Date();
@@ -268,20 +269,28 @@
   }
 
   async function send(tipo){
+    if(SENDING) return;
+    SENDING = true;
+
+    const btnE = $("btnEntrada");
+    const btnS = $("btnSalida");
+    btnE.disabled = true;
+    btnS.disabled = true;
+
     try{
       const guardiaId=$("selGuardia").value;
-      if(!guardiaId) return showMsg("Selecciona tu nombre.", "err");
-      if(!stream) return showMsg("❌ Primero toca 'Activar cámara'.", "err");
+      if(!guardiaId) { showMsg("Selecciona tu nombre.", "err"); return; }
+      if(!stream) { showMsg("❌ Primero toca 'Activar cámara'.", "err"); return; }
 
       const selfieB64=captureFromVideoB64();
-      if(!selfieB64) return showMsg("❌ No se pudo capturar selfie. Espera 1 segundo y reintenta.", "err");
+      if(!selfieB64) { showMsg("❌ No se pudo capturar selfie. Espera 1 segundo y reintenta.", "err"); return; }
 
       showMsg("📡 Obteniendo GPS…");
       setDot("dotGps","");
       const gps=await getGPS();
       setDot("dotGps","ok");
 
-      showMsg("⏳ Registrando…");
+      showMsg("⏳ Registrando… (no presiones nuevamente)");
       $("hint2").textContent="Procesando…";
 
       const res = await apiSubmit({
@@ -304,6 +313,10 @@
     }catch(e){
       setDot("dotGps","err");
       showMsg("No se pudo registrar.\n" + (e?.message || e), "err");
+    } finally {
+      SENDING = false;
+      btnE.disabled = false;
+      btnS.disabled = false;
     }
   }
 
